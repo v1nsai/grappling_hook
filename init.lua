@@ -24,13 +24,6 @@ throwing.register_bow("grappling_hook:auto_hook", {
   cooldown = 1,
   delay = 0.4,
   allow_shot = function(player, itemstack, index)
-    -- tomahawk_sneak = player:get_player_control().sneak
-    -- local ok = itemstack:get_name() ~= ""
-    -- if tomahawk_sneak == true then
-    --   return ok
-    -- else
-    --   return ok, ok and ItemStack(nil)
-	-- end
 	return itemstack
   end,
 	throw_itself = true,
@@ -66,7 +59,11 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 		},
 		data.itemstack
 	  )
-	  hitter.move_to(last_pos)
+	  hitter.move_to(hitter, {
+		x = math.floor(last_pos.x+0.5),
+		y = math.floor(last_pos.y+0.5),
+		z = math.floor(last_pos.z+0.5)
+	  })
 	end,
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
