@@ -51,15 +51,16 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 	  hitter_inventory = minetest.get_inventory({type="player", name=hitter.get_player_name(hitter)})
 	--   replacement_hook = ItemStack('grappling_hook:auto_hook')
 	  replacement_hook = data.itemstack
-	  hitter_inventory:set_stack('main', 1 ,replacement_hook)
+	  hitter_inventory:set_stack('main', data.index,replacement_hook)
 	  hitter.move_to(hitter, {
 		x = math.floor(last_pos.x+0.5),
 		y = math.floor(last_pos.y+0.5),
-		z = math.floor(last_pos.z+0.5)
-	  })
+		z = math.floor(last_pos.z+0.5) 
+	  }, true)
 	end,
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
+		data.index = index
 	end,
 	  tool_capabilities = {
 		  full_punch_interval = 0.8,
@@ -70,5 +71,4 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 		  damage_groups = {fleshy=8},
 	  },
 	  sound = {breaks = "default_tool_breaks"},
-  
   })
