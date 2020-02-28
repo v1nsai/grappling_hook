@@ -1,3 +1,4 @@
 # grappling_hook mod for minetest
 
-Adds throwable grappling_hooks to minetest
+Work in progress but functional
+Adds throwable grappling hooks to minetest
