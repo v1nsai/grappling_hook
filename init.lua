@@ -48,15 +48,23 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 			self.sneak = staticdata == "true"
 	end,
 	on_hit = function(self, pos, last_pos, node, object, hitter, data)
-	  hitter_inventory = minetest.get_inventory({type="player", name=hitter.get_player_name(hitter)})
+	  hitter_inventory = minetest.get_inventory({type="player", name=hitter:get_player_name()})
 	--   replacement_hook = ItemStack('grappling_hook:auto_hook')
 	  replacement_hook = data.itemstack
 	  hitter_inventory:set_stack('main', data.index,replacement_hook)
-	  hitter.move_to(hitter, {
+	--   hitter.move_to(hitter, {
+	-- 	x = math.floor(last_pos.x+0.5),
+	-- 	y = math.floor(last_pos.y+0.5),
+	-- 	z = math.floor(last_pos.z+0.5) 
+	--   }, true)
+	stuck_hook = minetest.add_entity(last_pos, "grappling_hook:auto_hook")
+	rel_pos = {
 		x = math.floor(last_pos.x+0.5),
 		y = math.floor(last_pos.y+0.5),
 		z = math.floor(last_pos.z+0.5) 
-	  }, true)
+	  }
+	roation = {x=0, y=0, z=0}
+	hitter:set_attach(stuck_hook, "Arm_Right", rel_pos, rotation)
 	end,
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
