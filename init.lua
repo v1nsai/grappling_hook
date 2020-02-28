@@ -48,17 +48,10 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 			self.sneak = staticdata == "true"
 	end,
 	on_hit = function(self, pos, last_pos, node, object, hitter, data)
-	  if self.sneak then
-		data.itemstack:set_count(1)
-	  end
-	  minetest.spawn_item(
-		{
-		  x = math.floor(last_pos.x+0.5),
-		  y = math.floor(last_pos.y+0.5),
-		  z = math.floor(last_pos.z+0.5)
-		},
-		data.itemstack
-	  )
+	  hitter_inventory = minetest.get_inventory({type="player", name=hitter.get_player_name(hitter)})
+	--   replacement_hook = ItemStack('grappling_hook:auto_hook')
+	  replacement_hook = data.itemstack
+	  hitter_inventory:set_stack('main', 1 ,replacement_hook)
 	  hitter.move_to(hitter, {
 		x = math.floor(last_pos.x+0.5),
 		y = math.floor(last_pos.y+0.5),
