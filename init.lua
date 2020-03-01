@@ -1,3 +1,10 @@
+-- Register key listener to detach when jump pressed
+-- jump_key_pressed = function(keys, old_keys, dtime, player_name)
+-- 	if player_name == nil
+
+-- 	end
+-- end
+
 -- auto_hook recipe
 minetest.register_craft({
 	output = 'grappling_hook:auto_hook 1',
@@ -15,68 +22,80 @@ minetest.register_craftitem("grappling_hook:auto_hook", {
 	stack_max = 16,
 })
 
--- auto_hook throwing API
+-- auto_hook throwing API registration
+local detach = function(itemstack, placer, pointed_thing)
+	placer:set_detach()
+end
 throwing.register_bow("grappling_hook:auto_hook", {
-  itemcraft = "grappling_hook:auto_hook",
-  description = "Pulls player automatically to where hook lands",
-  texture = "grappling_hook.png",
-  wield_image = "grappling_hook.png",
-  cooldown = 1,
-  delay = 0.4,
-  allow_shot = function(player, itemstack, index)
-	return itemstack
-  end,
+	itemcraft = "grappling_hook:auto_hook",
+	description = "Pulls player automatically to where hook lands",
+	texture = "grappling_hook.png",
+	wield_image = "grappling_hook.png",
+	cooldown = 1,
+	delay = 0.4,
+	on_place = detach,
+	on_secondary_use = detach,
+	allow_shot = function(player, itemstack, index)
+		return itemstack
+	end,
 	throw_itself = true,
 	-- sound = "sling_throw",
-  spawn_arrow_entity = function(pos, arrow, player)
-    local obj = minetest.add_entity(pos, "grappling_hook:auto_hook")
-    -- obj:set_properties{
-    --   textures = {arrow},
-    -- }
-    return obj
-  end
+	spawn_arrow_entity = function(pos, arrow, player)
+		local obj = minetest.add_entity(pos, "grappling_hook:auto_hook")
+		obj:set_properties{
+		  textures = {arrow},
+		  nametag = "attachentity"
+		}
+		return obj
+	end
 })
 
+-- auto hook minetest entity registration
 minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 	visual = "wielditem",
 	visual_size = {x=0.2, y=0.2},
 	collisionbox = {-0.2,-0.2,-0.2, 0.2,0.2,0.2},
+	texture = "grappling_hook.png",
 	target = throwing.target_node,
 	on_hit_sound = "",
 	on_throw_sound = "",
-	on_activate = function(self, staticdata)
-			self.sneak = staticdata == "true"
-	end,
 	on_hit = function(self, pos, last_pos, node, object, hitter, data)
-	  hitter_inventory = minetest.get_inventory({type="player", name=hitter:get_player_name()})
-	--   replacement_hook = ItemStack('grappling_hook:auto_hook')
-	  replacement_hook = data.itemstack
-	  hitter_inventory:set_stack('main', data.index,replacement_hook)
-	--   hitter.move_to(hitter, {
-	-- 	x = math.floor(last_pos.x+0.5),
-	-- 	y = math.floor(last_pos.y+0.5),
-	-- 	z = math.floor(last_pos.z+0.5) 
-	--   }, true)
-	stuck_hook = minetest.add_entity(last_pos, "grappling_hook:auto_hook")
-	rel_pos = {
-		x = math.floor(last_pos.x+0.5),
-		y = math.floor(last_pos.y+0.5),
-		z = math.floor(last_pos.z+0.5) 
-	  }
-	roation = {x=0, y=0, z=0}
-	hitter:set_attach(stuck_hook, "Arm_Right", rel_pos, rotation)
+	  	-- Move hitter by attaching
+		local rel_pos = {
+			x = 20,
+			y = 0,
+			z = 20
+		}
+		local rotation = {x=0, y=0, z=0}
+		local stuck_hook = minetest.add_entity(last_pos, "grappling_hook:attach_entity")
+		stuck_hook:set_properties{ textures = {stuck_hook:get_luaentity()} }
+		hitter:set_attach(stuck_hook, "Arm_Right", rel_pos, rotation)
+		
+		-- Replace item in inventory
+	  	local hitter_inventory = minetest.get_inventory({type="player", name=hitter:get_player_name()})
+	  	local replacement_hook = data.itemstack
+	  	hitter_inventory:set_stack('main', data.index,replacement_hook)
 	end,
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
 		data.index = index
 	end,
-	  tool_capabilities = {
-		  full_punch_interval = 0.8,
-		  max_drop_level=1,
-		  groupcaps={
-			  snappy={times={[1]=2.5, [2]=1.20, [3]=0.35}, uses=30, maxlevel=2},
-		  },
-		  damage_groups = {fleshy=8},
-	  },
-	  sound = {breaks = "default_tool_breaks"},
-  })
+	sound = {breaks = "default_tool_breaks"},
+	on_death = function(self, killer)
+		minetest.chat_send_all("killed hook")
+	end
+})
+
+-- hook entity to attach to
+minetest.register_entity("grappling_hook:attach_entity", {
+	visual = "wielditem",
+	visual_size = {x=0.2, y=0.2},
+	collisionbox = {-0.2,-0.2,-0.2, 0.2,0.2,0.2},
+	texture = "grappling_hook.png",
+	on_detach_child = function(self, child)
+		self.object:remove()
+	end,
+	on_death = function(self, killer)
+		minetest.chat_send_all("killed hook")
+	end
+})
