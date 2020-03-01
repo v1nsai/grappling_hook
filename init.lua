@@ -1,9 +1,17 @@
 -- Register key listener to detach when jump pressed
--- jump_key_pressed = function(keys, old_keys, dtime, player_name)
--- 	if player_name == nil
-
--- 	end
--- end
+local keys_to_be_pressed = "jump"
+on_jump_key_pressed = function(keys, old_keys, dtime, player_name)
+	if minetest.is_singleplayer() then
+		player = minetest.get_player_by_name("singleplayer")
+	else
+		player = minetest.get_player_by_name(player_name)
+	end
+	local attached = player:get_attach()
+	if attached then
+		player:set_detach()
+	end
+end
+keyevent.register_on_keypress(keys_to_be_pressed, on_jump_key_pressed)
 
 -- auto_hook recipe
 minetest.register_craft({
@@ -43,8 +51,8 @@ throwing.register_bow("grappling_hook:auto_hook", {
 	spawn_arrow_entity = function(pos, arrow, player)
 		local obj = minetest.add_entity(pos, "grappling_hook:auto_hook")
 		obj:set_properties{
-		  textures = {arrow},
-		  nametag = "attachentity"
+		  textures = {arrow}
+		--   nametag = "attachentity"
 		}
 		return obj
 	end
@@ -62,9 +70,9 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 	on_hit = function(self, pos, last_pos, node, object, hitter, data)
 	  	-- Move hitter by attaching
 		local rel_pos = {
-			x = 20,
-			y = 0,
-			z = 20
+			x = 0,
+			y = -20,
+			z = 0
 		}
 		local rotation = {x=0, y=0, z=0}
 		local stuck_hook = minetest.add_entity(last_pos, "grappling_hook:attach_entity")
@@ -72,9 +80,9 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 		hitter:set_attach(stuck_hook, "Arm_Right", rel_pos, rotation)
 		
 		-- Replace item in inventory
-	  	local hitter_inventory = minetest.get_inventory({type="player", name=hitter:get_player_name()})
-	  	local replacement_hook = data.itemstack
-	  	hitter_inventory:set_stack('main', data.index,replacement_hook)
+	 	local hitter_inventory = minetest.get_inventory({type="player", name=hitter:get_player_name()})
+		local replacement_hook = data.itemstack
+		hitter_inventory:set_stack('main', data.index,replacement_hook)
 	end,
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
