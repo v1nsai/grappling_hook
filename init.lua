@@ -2,13 +2,16 @@
 local keys_to_be_pressed = "jump"
 on_jump_key_pressed = function(keys, old_keys, dtime, player_name)
 	if minetest.is_singleplayer() then
-		player = minetest.get_player_by_name("singleplayer")
-	else
-		player = minetest.get_player_by_name(player_name)
+		player_name = 'singleplayer'
 	end
+	local player = minetest.get_player_by_name(player_name)
 	local attached = player:get_attach()
 	if attached then
+		-- detach
 		player:set_detach()
+		-- Add hook back to inventory
+		local replacement_hook = ItemStack('grappling_hook:auto_hook')
+		player:get_inventory():set_stack('main', hook_index, replacement_hook)
 	end
 end
 keyevent.register_on_keypress(keys_to_be_pressed, on_jump_key_pressed)
@@ -68,25 +71,33 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 	on_hit_sound = "",
 	on_throw_sound = "",
 	on_hit = function(self, pos, last_pos, node, object, hitter, data)
-	  	-- Move hitter by attaching
+	  	-- Attach to where hook stuck
 		local rel_pos = {
 			x = 0,
-			y = -20,
+			y = 0,
 			z = 0
 		}
 		local rotation = {x=0, y=0, z=0}
 		local stuck_hook = minetest.add_entity(last_pos, "grappling_hook:attach_entity")
 		stuck_hook:set_properties{ textures = {stuck_hook:get_luaentity()} }
 		hitter:set_attach(stuck_hook, "Arm_Right", rel_pos, rotation)
-		
-		-- Replace item in inventory
-	 	local hitter_inventory = minetest.get_inventory({type="player", name=hitter:get_player_name()})
-		local replacement_hook = data.itemstack
-		hitter_inventory:set_stack('main', data.index,replacement_hook)
 	end,
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
 		data.index = index
+		hook_index = index -- can't figure out how to make data global
+	end,
+	on_hit_fails = function(self, pos, thrower, data)
+		-- Attach to where the hook stuck
+		local rel_pos = {
+			x = 0,
+			y = 0,
+			z = 0
+		}
+		local rotation = {x=0, y=0, z=0}
+		local stuck_hook = minetest.add_entity(thrower:get_pos(), "grappling_hook:attach_entity")
+		stuck_hook:set_properties{ textures = {stuck_hook:get_luaentity()} }
+		thrower:set_attach(stuck_hook, "Arm_Right", rel_pos, rotation)
 	end,
 	sound = {breaks = "default_tool_breaks"},
 	on_death = function(self, killer)
