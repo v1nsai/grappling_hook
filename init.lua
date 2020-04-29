@@ -85,7 +85,7 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 	on_throw = function(self, pos, thrower, itemstack, index, data)
 		data.itemstack = itemstack
 		data.index = index
-		hook_index = index -- can't figure out how to make data global
+		hook_index = index
 	end,
 	on_hit_fails = function(self, pos, thrower, data)
 		-- Attach to where the hook stuck
@@ -102,6 +102,21 @@ minetest.register_entity("grappling_hook:auto_hook", throwing.make_arrow_def{
 	sound = {breaks = "default_tool_breaks"},
 	on_death = function(self, killer)
 		minetest.chat_send_all("killed hook")
+	end,
+	on_step = function(self, dtime, moveresult)
+		-- Called every server step
+		-- dtime: Elapsed time
+		-- moveresult: Table with collision info (only available if physical=true)
+		local rel_pos = {
+			x = 0,
+			y = 0,
+			z = 0
+		}
+		local rotation = {x=0, y=0, z=0}
+		if dtime == 1 then
+			local rope = minetest.add_entity(self:get_pos(), "grappling_hook:rope_entity", nil)
+			rope:set_attach(self, "Arm_Right", rel_pos, rotation)
+		end
 	end
 })
 
@@ -117,4 +132,73 @@ minetest.register_entity("grappling_hook:attach_entity", {
 	on_death = function(self, killer)
 		minetest.chat_send_all("killed hook")
 	end
+})
+
+-- rope entity to connect the hook and the player
+minetest.register_entity("grappling_hook:rope_entity", {
+    initial_properties = {
+		physical = true,
+		collide_with_objects = true,	
+		collisionbox = {-0.5, 0.0, -0.5, 0.5, 1.0, 0.5},  -- Default
+		pointable = true, -- not sure if I should mess with this
+		visual = "wielditem",
+		visual_size = {x = 1, y = 1, z = 1},
+		-- Multipliers for the visual size. If `z` is not specified, `x` will be used
+		-- to scale the entity along both horizontal axes.
+		mesh = "rope.png",	
+		textures = {"grappling_hook:rope_entity"},
+		-- Number of required textures depends on visual.
+		-- "cube" uses 6 textures just like a node, but all 6 must be defined.
+		-- "sprite" uses 1 texture.
+		-- "upright_sprite" uses 2 textures: {front, back}.
+		-- "wielditem" expects 'textures = {itemname}' (see 'visual' above).
+		
+		-- Might be needed to move rope dynamically
+		automatic_rotate = 0,
+		-- Set constant rotation in radians per second, positive or negative.
+		-- Set to 0 to disable constant rotation.
+		automatic_face_movement_dir = 0.0,
+		-- Automatically set yaw to movement direction, offset in degrees.
+		-- 'false' to disable.
+		automatic_face_movement_max_rotation_per_sec = -1,
+		-- Limit automatic rotation to this value in degrees per second.
+		-- No limit if value <= 0.
+		nametag = "",
+
+		static_save = true,
+		-- If false, never save this object statically. It will simply be
+		-- deleted when the block gets unloaded.
+		-- The get_staticdata() callback is never called then.
+		-- Defaults to 'true'.
+	},
+
+    -- on_activate = function(self, staticdata, dtime_s),
+
+	on_step = function(self, dtime, moveresult)
+		-- Called every server step
+		-- dtime: Elapsed time
+		-- moveresult: Table with collision info (only available if physical=true)
+		local rel_pos = {
+			x = 0,
+			y = 0,
+			z = 0
+		}
+		local rotation = {x=0, y=0, z=0}
+		if dtime == 1 then
+			local rope = minetest.add_entity(self:get_pos(), "grappling_hook:rope_entity", nil)
+			rope:set_attach(self, "Arm_Right", rel_pos, rotation)
+		end
+	end
+
+    -- on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir),
+
+    -- on_rightclick = function(self, clicker),
+
+    -- get_staticdata = function(self),
+    -- Called sometimes; the string returned is passed to on_activate when
+    -- the entity is re-activated from static state
+
+    -- _custom_field = whatever,
+    -- You can define arbitrary member variables here (see Item definition
+    -- for more info) by using a '_' prefix
 })
