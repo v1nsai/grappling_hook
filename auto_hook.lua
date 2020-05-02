@@ -1,3 +1,7 @@
+-----------------------------------------------------------------------------
+-- A grappling hook that immediately pulls the player to wherever it lands --
+-----------------------------------------------------------------------------
+
 -- auto_hook recipe
 minetest.register_craft({
 	output = 'grappling_hook:auto_hook 1',
